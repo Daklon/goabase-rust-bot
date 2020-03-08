@@ -4,6 +4,8 @@ use tokio::task::block_in_place;
 use std::fmt::Write;
 //use serde_json::Result;
 
+use chrono::{DateTime, TimeZone, FixedOffset};
+
 #[derive(Deserialize, PartialEq, Clone, Debug)]
 struct Party {
     id: String,
@@ -40,8 +42,10 @@ enum Command {
     Help,
     #[command(description = "Check if the bot is alive.")]
     Ping,
-    #[command(description = "Return a list with the upcoming raves.")]
+    #[command(description = "Return a list with the upcoming raves in the canary islands.")]
     Raves,
+    #[command(description = "Return a list with the upcoming raves in Spain.")]
+    TodasLasRaves,
 }
 
 
@@ -52,7 +56,8 @@ async fn answer(
     match command {
         Command::Help => cx.answer(Command::descriptions()).send().await?,
         Command::Ping => cx.answer("Pong!").send().await?,
-        Command::Raves => cx.answer(raves().await).send().await?,
+        Command::Raves => cx.answer(raves(false).await).send().await?,
+        Command::TodasLasRaves => cx.answer(raves(true).await).send().await?,
     };
 
     Ok(())
@@ -68,12 +73,13 @@ async fn handle_commands(rx: DispatcherHandlerRx<Message>) {
         .await;
 }
 
-async fn raves() -> String {
+async fn raves(all: bool) -> String {
     let data = block_in_place(|| get_parties());
     //TODO quitar unwrap
-    let parsed: Parties = serde_json::from_str(&data.unwrap()).unwrap();
-    //TODO Esto es una chapuza, mejorarlo
-    let parsed = filter_parties(parsed);
+    let mut parsed: Parties = serde_json::from_str(&data.unwrap()).unwrap();
+    if !all {
+        parsed = filter_parties(parsed);
+    }
     let message = format_parties(parsed); 
     //let ref name = parsed.partylist[0].nameParty;
     //return name.to_string();
@@ -84,7 +90,8 @@ async fn raves() -> String {
 fn format_parties(data: Parties) -> String {
     let mut output: String = Default::default();
     for party in data.partylist {
-        write!(&mut output, "{} {} {} {}\n",party.nameParty, party.dateStart, party.dateEnd, party.nameTown);
+        let dateStart = DateTime::parse_from_rfc3339(party.dateStart.as_str()).unwrap_or(FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0));
+        write!(&mut output, "{}\n{}\n{}\n",party.nameParty, dateStart.format("%-d %B %H:%M"), party.nameTown);
     }
     return output;
 }
@@ -94,26 +101,29 @@ fn filter_parties(data: Parties) -> Parties {
     let mut filtered: Parties = Default::default();
     for party in data.partylist {
         //TODO quitar unwrap
-        let geoLat = party.geoLat.clone().unwrap().parse::<f64>().unwrap();
-        let geoLon = party.geoLon.clone().unwrap().parse::<f64>().unwrap();
+        let geoLat = party.geoLat.clone();
+        let geoLon = party.geoLon.clone();
+        if geoLat.is_some() && geoLon.is_some() {
+            let geoLat = geoLat.unwrap().parse::<f64>().unwrap();
+            let geoLon = geoLon.unwrap().parse::<f64>().unwrap();
+
+            if geoLat < 29.555 && geoLat > 27.6145 {
+                if geoLon < -13.1956 && geoLon > -18.540 {
+                    filtered.partylist.push(party);
+                    continue;
+                }
+            }
+            // match using nameTown
+            match party.nameTown.to_lowercase().as_str() {
+                "tenerife" => filtered.partylist.push(party),
+                _ => continue,
+            }
+        }
         //29.555372, -13.265574 //arriba derecha
         //27.669400, -13.195601 //abajo derecha
         //27.614655, -18.239785// abajo izquierda
         //29.285276, -18.254011// arriba izquierda
         // Match using coordinates
-        if geoLat < 29.555 && geoLat > 27.6145 {
-            println!("1");
-            if geoLon < -13.1956 && geoLon > -18.540 {
-                println!("2");
-                filtered.partylist.push(party);
-                continue;
-            }    
-        }
-        // match using nameTown
-        match party.nameTown.to_lowercase().as_str() {
-            "tenerife" => filtered.partylist.push(party),
-            _ => continue,
-        }
     }
     return filtered;
 }
