@@ -7,27 +7,28 @@ use std::fmt::Write;
 use chrono::{DateTime, TimeZone, FixedOffset};
 
 #[derive(Deserialize, PartialEq, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 struct Party {
     id: String,
-    nameParty: String,
-    dateStart: String,
-    dateEnd: String,
-    nameType: String,
-    nameCountry: String,
-    isoCountry: String,
-    nameTown: String,
-    geoLat: Option<String>,
-    geoLon: Option<String>,
-    nameOrganizer: String,
-    urlOrganizer: Option<String>,
-    urlImageSmall: Option<String>,
-    urlImageMedium: Option<String>,
-    urlImageFull: Option<String>,
-    dateCreated: String,
-    dateModified: String,
-    nameStatus: String,
-    urlPartyHtml: String,
-    urlPartyJson: String,
+    name_party: String,
+    date_start: String,
+    date_end: String,
+    name_type: String,
+    name_country: String,
+    iso_country: String,
+    name_town: String,
+    geo_lat: Option<String>,
+    geo_lon: Option<String>,
+    name_organizer: String,
+    url_organizer: Option<String>,
+    url_image_mall: Option<String>,
+    url_image_medium: Option<String>,
+    url_image_full: Option<String>,
+    date_created: String,
+    date_modified: String,
+    name_status: String,
+    url_party_html: String,
+    url_party_json: String,
 }
 
 #[derive(Deserialize, Default, PartialEq, Clone, Debug)]
@@ -90,8 +91,8 @@ async fn raves(all: bool) -> String {
 fn format_parties(data: Parties) -> String {
     let mut output: String = Default::default();
     for party in data.partylist {
-        let dateStart = DateTime::parse_from_rfc3339(party.dateStart.as_str()).unwrap_or(FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0));
-        write!(&mut output, "{}\n{}\n{}\n",party.nameParty, dateStart.format("%-d %B %H:%M"), party.nameTown);
+        let date_start = DateTime::parse_from_rfc3339(party.date_start.as_str()).unwrap_or(FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0));
+        write!(&mut output, "{}\n{}\n{}\n",party.name_party, date_start.format("%-d %B %H:%M"), party.name_town);
     }
     return output;
 }
@@ -101,20 +102,20 @@ fn filter_parties(data: Parties) -> Parties {
     let mut filtered: Parties = Default::default();
     for party in data.partylist {
         //TODO quitar unwrap
-        let geoLat = party.geoLat.clone();
-        let geoLon = party.geoLon.clone();
-        if geoLat.is_some() && geoLon.is_some() {
-            let geoLat = geoLat.unwrap().parse::<f64>().unwrap();
-            let geoLon = geoLon.unwrap().parse::<f64>().unwrap();
+        let geo_lat = party.geo_lat.clone();
+        let geo_lon = party.geo_lon.clone();
+        if geo_lat.is_some() && geo_lon.is_some() {
+            let geo_lat = geo_lat.unwrap().parse::<f64>().unwrap();
+            let geo_lon = geo_lon.unwrap().parse::<f64>().unwrap();
 
-            if geoLat < 29.555 && geoLat > 27.6145 {
-                if geoLon < -13.1956 && geoLon > -18.540 {
+            if geo_lat < 29.555 && geo_lat > 27.6145 {
+                if geo_lon < -13.1956 && geo_lon > -18.540 {
                     filtered.partylist.push(party);
                     continue;
                 }
             }
             // match using nameTown
-            match party.nameTown.to_lowercase().as_str() {
+            match party.name_town.to_lowercase().as_str() {
                 "tenerife" => filtered.partylist.push(party),
                 _ => continue,
             }
@@ -132,48 +133,48 @@ fn filter_parties(data: Parties) -> Parties {
 fn test_filter_parties(){
     let party1 = Party {
     id: String::from("00000"),
-    nameParty: String::from("nameParty1"),
-    dateStart: String::from("dateStart1"),
-    dateEnd: String::from("dateEnd1"),
-    nameType: String::from("nameType1"),
-    nameCountry: String::from("nameCountry1"),
-    isoCountry: String::from("isoCountry1"),
-    nameTown: String::from("nameTown1"),
-    geoLat: Some(String::from("28.02")),
-    geoLon: Some(String::from("-16.01")),
-    nameOrganizer: String::from("nameOrganizer1"),
-    urlOrganizer: Some(String::from("urlOrganizer1")),
-    urlImageSmall: Some(String::from("urlImageSmall1")),
-    urlImageMedium: Some(String::from("urlImageMedium1")),
-    urlImageFull: Some(String::from("urlImageFull1")),
-    dateCreated: String::from("dateCreated1"),
-    dateModified: String::from("dateModified1"),
-    nameStatus: String::from("nameStatus1"),
-    urlPartyHtml: String::from("urlPartyHtml"),
-    urlPartyJson: String::from("urlPartyJson1"),
+    name_party: String::from("nameParty1"),
+    date_start: String::from("dateStart1"),
+    date_end: String::from("dateEnd1"),
+    name_type: String::from("nameType1"),
+    name_country: String::from("nameCountry1"),
+    iso_country: String::from("isoCountry1"),
+    name_town: String::from("nameTown1"),
+    geo_lat: Some(String::from("28.02")),
+    geo_lon: Some(String::from("-16.01")),
+    name_organizer: String::from("nameOrganizer1"),
+    url_organizer: Some(String::from("urlOrganizer1")),
+    url_image_small: Some(String::from("urlImageSmall1")),
+    url_image_medium: Some(String::from("urlImageMedium1")),
+    url_image_full: Some(String::from("urlImageFull1")),
+    date_created: String::from("dateCreated1"),
+    date_modified: String::from("dateModified1"),
+    name_status: String::from("nameStatus1"),
+    url_party_html: String::from("urlPartyHtml"),
+    url_party_json: String::from("urlPartyJson1"),
     };
     
     let party2 = Party {
     id: String::from("00001"),
-    nameParty: String::from("nameParty2"),
-    dateStart: String::from("dateStart2"),
-    dateEnd: String::from("dateEnd2"),
-    nameType: String::from("nameType2"),
-    nameCountry: String::from("nameCountry2"),
-    isoCountry: String::from("isoCountry2"),
-    nameTown: String::from("TENERIFE"),
-    geoLat: Some(String::from("-15.00")),
-    geoLon: Some(String::from("28.0")),
-    nameOrganizer: String::from("nameOrganizer2"),
-    urlOrganizer: Some(String::from("urlOrganizer1")),
-    urlImageSmall: Some(String::from("urlImageSmall2")),
-    urlImageMedium: Some(String::from("urlImageMedium2")),
-    urlImageFull: Some(String::from("urlImageFull1")),
-    dateCreated: String::from("dateCreated2"),
-    dateModified: String::from("dateModified2"),
-    nameStatus: String::from("nameStatus2"),
-    urlPartyHtml: String::from("urlPartyHtml2"),
-    urlPartyJson: String::from("urlPartyJson"),
+    name_party: String::from("nameParty2"),
+    date_start: String::from("dateStart2"),
+    date_end: String::from("dateEnd2"),
+    name_type: String::from("nameType2"),
+    name_country: String::from("nameCountry2"),
+    iso_country: String::from("isoCountry2"),
+    name_town: String::from("TENERIFE"),
+    geo_lat: Some(String::from("-15.00")),
+    geo_lon: Some(String::from("28.0")),
+    name_organizer: String::from("nameOrganizer2"),
+    url_organizer: Some(String::from("urlOrganizer1")),
+    url_image_small: Some(String::from("urlImageSmall2")),
+    url_image_medium: Some(String::from("urlImageMedium2")),
+    url_image_full: Some(String::from("urlImageFull1")),
+    date_created: String::from("dateCreated2"),
+    date_modified: String::from("dateModified2"),
+    name_status: String::from("nameStatus2"),
+    url_party_html: String::from("urlPartyHtml2"),
+    url_party_json: String::from("urlPartyJson"),
     };
     let mut all_parties: Parties = Default::default();
     all_parties.partylist.push(party1);
